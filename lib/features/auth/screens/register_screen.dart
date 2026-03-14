@@ -209,7 +209,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             onFieldSubmitted: (_) => _register(),
                             decoration: const InputDecoration(
                               labelText: 'Konfirmasi Password',
-                              prefixIcon: Icon(LucideIcons.lockKeyhole, size: 18),
+                              prefixIcon: Icon(LucideIcons.lock, size: 18),
                             ),
                             validator: (v) {
                               if (v != _passwordCtrl.text) return 'Password tidak cocok';

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bcrypt/bcrypt.dart';
 
 part 'supabase_service.g.dart';
 
@@ -10,19 +10,26 @@ part 'supabase_service.g.dart';
 // ENV CONFIG — isi dengan data Supabase kamu
 // ==========================================
 class SupabaseConfig {
-  static const String url        = String.fromEnvironment('SUPABASE_URL',     defaultValue: 'https://YOUR_PROJECT.supabase.co');
-  static const String anonKey   = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'YOUR_ANON_KEY');
-  static const String loginFn   = '$url/functions/v1/login';
+  static const String url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://wtpnbyfzgooighilutjv.supabase.co',
+  );
+  static const String anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cG5ieWZ6Z29vaWdoaWx1dGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NTcxNDIsImV4cCI6MjA4ODQzMzE0Mn0.fo5u5vvzSaMxsKRzUUuHbj7Q72dF1viV7f7Bqy2bAo8',
+  );
+  static const String loginFn = '$url/functions/v1/login';
   static const String registerFn = '$url/functions/v1/register';
 }
 
 // ==========================================
 // SECURE STORAGE KEY
 // ==========================================
-const _kTokenKey   = 'mykanz_access_token';
-const _kUserIdKey  = 'mykanz_user_id';
-const _kUserName   = 'mykanz_user_name';
-const _kUserEmail  = 'mykanz_user_email';
+const _kTokenKey = 'mykanz_access_token';
+const _kUserIdKey = 'mykanz_user_id';
+const _kUserName = 'mykanz_user_name';
+const _kUserEmail = 'mykanz_user_email';
 
 // ==========================================
 // SUPABASE CLIENT PROVIDER
@@ -43,59 +50,80 @@ class AuthService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  /// Login via Supabase Edge Function (verifikasi bcrypt)
+  String? currentUserId;
+
+  /// Login langsung ke Supabase users (verifikasi bcrypt)
   Future<AuthResult> login(String email, String password) async {
     try {
-      final response = await _client.functions.invoke(
-        'login',
-        body: {'email': email, 'password': password},
-      );
+      final user = await _client
+          .from('users')
+          .select('id, name, email, password_hash')
+          .eq('email', email)
+          .maybeSingle();
 
-      final data = response.data as Map<String, dynamic>;
-      if (data['error'] != null) {
-        return AuthResult.error(data['error'] as String);
+      if (user == null) {
+        return AuthResult.error('Email atau password salah');
       }
 
-      final token = data['access_token'] as String;
-      final user = data['user'] as Map<String, dynamic>;
+      final hash = user['password_hash'] as String?;
+      if (hash == null || !BCrypt.checkpw(password, hash)) {
+        return AuthResult.error('Email atau password salah');
+      }
 
-      // Set session di Supabase client agar RLS otomatis pakai JWT ini
-      await _client.auth.setSession(token);
+      final userId = user['id'] as String;
+      final userName = user['name'] as String? ?? '';
+
+      currentUserId = userId;
 
       // Simpan ke secure storage
       await Future.wait([
-        _storage.write(key: _kTokenKey,  value: token),
-        _storage.write(key: _kUserIdKey, value: user['id'] as String),
-        _storage.write(key: _kUserName,  value: user['name'] as String? ?? ''),
-        _storage.write(key: _kUserEmail, value: user['email'] as String),
+        _storage.write(key: _kUserIdKey, value: userId),
+        _storage.write(key: _kUserName, value: userName),
+        _storage.write(key: _kUserEmail, value: email),
+        _storage.write(
+          key: _kTokenKey,
+          value: 'dummy_token',
+        ), // Bypass cek token
       ]);
 
       return AuthResult.success(
-        userId: user['id'] as String,
-        name: user['name'] as String? ?? '',
-        email: user['email'] as String,
-        token: token,
+        userId: userId,
+        name: userName,
+        email: email,
+        token: 'dummy_token',
       );
     } catch (e) {
       return AuthResult.error('Terjadi kesalahan koneksi: $e');
     }
   }
 
-  /// Register via Supabase Edge Function
-  Future<AuthResult> register(String name, String email, String password) async {
+  /// Register langsung ke Supabase users
+  Future<AuthResult> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
-      final response = await _client.functions.invoke(
-        'register',
-        body: {'name': name, 'email': email, 'password': password},
-      );
-
-      final data = response.data as Map<String, dynamic>;
-      if (data['error'] != null) {
-        return AuthResult.error(data['error'] as String);
+      // Cek existing user
+      final existing = await _client
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+      if (existing != null) {
+        return AuthResult.error('Email sudah terdaftar');
       }
 
+      final hash = BCrypt.hashpw(password, BCrypt.gensalt());
+
+      await _client
+          .from('users')
+          .insert({'name': name, 'email': email, 'password_hash': hash})
+          .select()
+          .single();
+
       // Setelah register berhasil, langsung login
-      return login(email, password);
+      return await login(email, password);
     } catch (e) {
       return AuthResult.error('Terjadi kesalahan koneksi: $e');
     }
@@ -103,6 +131,7 @@ class AuthService {
 
   /// Logout — hapus semua data dari secure storage
   Future<void> logout() async {
+    currentUserId = null;
     await _storage.deleteAll();
     await _client.auth.signOut();
   }
@@ -119,8 +148,8 @@ class AuthService {
       final token = await _storage.read(key: _kTokenKey);
       if (token == null) return false;
 
-      await _client.auth.setSession(token);
-      return true;
+      currentUserId = await _storage.read(key: _kUserIdKey);
+      return currentUserId != null;
     } catch (_) {
       await _storage.deleteAll();
       return false;
@@ -129,8 +158,8 @@ class AuthService {
 
   /// Get cached user info (tanpa network call)
   Future<CachedUser?> getCachedUser() async {
-    final id    = await _storage.read(key: _kUserIdKey);
-    final name  = await _storage.read(key: _kUserName);
+    final id = await _storage.read(key: _kUserIdKey);
+    final name = await _storage.read(key: _kUserName);
     final email = await _storage.read(key: _kUserEmail);
     if (id == null || email == null) return null;
     return CachedUser(id: id, name: name ?? '', email: email);
@@ -140,7 +169,8 @@ class AuthService {
 // ==========================================
 // PROVIDER
 // ==========================================
-@riverpod
+// Singleton AuthService — keepAlive agar currentUserId tidak hilang saat rebuild
+@Riverpod(keepAlive: true)
 AuthService authService(Ref ref) => AuthService();
 
 // ==========================================
@@ -169,11 +199,15 @@ class AuthResult {
     required String email,
     required String token,
   }) => AuthResult._(
-    isSuccess: true, userId: userId, name: name, email: email, token: token,
+    isSuccess: true,
+    userId: userId,
+    name: name,
+    email: email,
+    token: token,
   );
 
   factory AuthResult.error(String message) =>
-    AuthResult._(isSuccess: false, errorMessage: message);
+      AuthResult._(isSuccess: false, errorMessage: message);
 }
 
 class CachedUser {

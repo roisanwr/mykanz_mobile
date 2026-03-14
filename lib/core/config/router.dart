@@ -5,6 +5,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/transactions/presentation/screens/transactions_screen.dart';
+import '../../features/wallets/presentation/screens/wallets_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../services/supabase_service.dart';
 
@@ -45,7 +49,8 @@ GoRouter router(Ref ref) {
     redirect: (context, state) {
       final isLoading = authState.isLoading;
       final isLoggedIn = authState.valueOrNull ?? false;
-      final isAuthRoute = state.matchedLocation == '/login' ||
+      final isAuthRoute =
+          state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
 
       if (isLoading) return null;
@@ -60,16 +65,14 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: '/login',
         name: 'login',
-        pageBuilder: (context, state) => _fadeTransition(
-          state, const LoginScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadeTransition(state, const LoginScreen()),
       ),
       GoRoute(
         path: '/register',
         name: 'register',
-        pageBuilder: (context, state) => _fadeTransition(
-          state, const RegisterScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadeTransition(state, const RegisterScreen()),
       ),
 
       // ==========================================
@@ -81,49 +84,66 @@ GoRouter router(Ref ref) {
           GoRoute(
             path: '/dashboard',
             name: 'dashboard',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Dashboard')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, const DashboardScreen()),
           ),
           GoRoute(
             path: '/transactions',
             name: 'transactions',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Transaksi')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, const TransactionsScreen()),
           ),
           GoRoute(
             path: '/wallets',
             name: 'wallets',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Dompet')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, const WalletsScreen()),
           ),
           GoRoute(
             path: '/portfolios',
             name: 'portfolios',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Portofolio')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, _placeholder('Portofolio')),
             routes: [
               GoRoute(
                 path: 'assets',
                 name: 'portfolio-assets',
-                pageBuilder: (context, state) => _slideTransition(state, _placeholder('Data Aset')),
+                pageBuilder: (context, state) =>
+                    _slideTransition(state, _placeholder('Data Aset')),
               ),
               GoRoute(
                 path: 'transactions',
                 name: 'portfolio-transactions',
-                pageBuilder: (context, state) => _slideTransition(state, _placeholder('Transaksi Investasi')),
+                pageBuilder: (context, state) => _slideTransition(
+                  state,
+                  _placeholder('Transaksi Investasi'),
+                ),
               ),
             ],
           ),
           GoRoute(
             path: '/categories',
             name: 'categories',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Kategori')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, _placeholder('Kategori')),
           ),
           GoRoute(
             path: '/goals',
             name: 'goals',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Target Impian')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, _placeholder('Target Impian')),
           ),
           GoRoute(
             path: '/budgets',
             name: 'budgets',
-            pageBuilder: (context, state) => _slideTransition(state, _placeholder('Anggaran')),
+            pageBuilder: (context, state) =>
+                _slideTransition(state, _placeholder('Anggaran')),
+          ),
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            pageBuilder: (context, state) =>
+                _slideTransition(state, const SettingsScreen()),
           ),
         ],
       ),
@@ -138,7 +158,7 @@ CustomTransitionPage _fadeTransition(GoRouterState state, Widget child) =>
     CustomTransitionPage(
       key: state.pageKey,
       child: child,
-      transitionsBuilder: (_, animation, __, child) =>
+      transitionsBuilder: (_, animation, _, child) =>
           FadeTransition(opacity: animation, child: child),
       transitionDuration: const Duration(milliseconds: 300),
     );
@@ -147,7 +167,7 @@ CustomTransitionPage _slideTransition(GoRouterState state, Widget child) =>
     CustomTransitionPage(
       key: state.pageKey,
       child: child,
-      transitionsBuilder: (_, animation, __, child) => SlideTransition(
+      transitionsBuilder: (_, animation, _, child) => SlideTransition(
         position: Tween<Offset>(
           begin: const Offset(0.05, 0),
           end: Offset.zero,
@@ -159,7 +179,10 @@ CustomTransitionPage _slideTransition(GoRouterState state, Widget child) =>
 
 // Placeholder sementara untuk screen yang belum dibuat
 Widget _placeholder(String title) => Scaffold(
-      body: Center(
-        child: Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      ),
-    );
+  body: Center(
+    child: Text(
+      title,
+      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    ),
+  ),
+);
