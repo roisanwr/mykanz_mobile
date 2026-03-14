@@ -8,6 +8,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../../../core/config/app_colors.dart';
 import '../../data/models/fiat_transaction_model.dart';
 import '../../data/repositories/transaction_repository.dart';
+import 'add_transaction_sheet.dart';
 
 final transactionsProvider = FutureProvider<List<FiatTransactionModel>>((
   ref,
@@ -40,8 +41,16 @@ class TransactionsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.plus),
-            onPressed: () {
-              // open transaction form
+            onPressed: () async {
+              final saved = await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const AddTransactionSheet(),
+              );
+              if (saved == true) {
+                ref.invalidate(transactionsProvider);
+              }
             },
           ),
         ],

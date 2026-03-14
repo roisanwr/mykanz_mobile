@@ -8,6 +8,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/config/app_colors.dart';
 import '../../../core/config/router.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../transactions/presentation/screens/transactions_screen.dart';
+import '../../wallets/presentation/screens/wallets_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -45,6 +47,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (result.isSuccess) {
       ref.read(authNotifierProvider.notifier).setLoggedIn();
+      // Invalidate semua data providers agar data user lama tidak tertampilkan
+      ref.invalidate(transactionsProvider);
+      ref.invalidate(walletsProvider);
+      ref.invalidate(walletBalancesProvider);
       if (mounted) context.go('/dashboard');
     } else {
       setState(() => _errorMessage = result.errorMessage);
