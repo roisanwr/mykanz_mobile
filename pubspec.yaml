@@ -1,0 +1,87 @@
+name: mykanz_mobile
+description: "Mykanz - Aplikasi Manajemen Keuangan Pribadi"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^14.6.3
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Backend - Supabase
+  supabase_flutter: ^2.8.4
+
+  # Secure Storage (simpan JWT)
+  flutter_secure_storage: ^9.2.2
+
+  # Local Preferences (dark mode, dll)
+  shared_preferences: ^2.3.3
+
+  # HTTP Client (panggil Edge Functions)
+  dio: ^5.7.0
+
+  # UI - Fonts
+  google_fonts: ^6.2.1
+
+  # Icons (sama persis dengan lucide-react di web)
+  lucide_icons: ^0.257.0
+
+  # SVG Support
+  flutter_svg: ^2.0.10+1
+
+  # Animasi
+  animate_do: ^3.3.4
+
+  # Loading skeleton
+  shimmer: ^3.0.0
+
+  # Spacing utility
+  gap: ^3.0.1
+
+  # Charts (pengganti Recharts)
+  fl_chart: ^0.70.2
+
+  # Form Management
+  flutter_form_builder: ^10.0.1
+  form_builder_validators: ^11.1.2
+
+  # Format Mata Uang & Tanggal
+  intl: ^0.20.2
+
+  # Modal Bottom Sheet
+  modal_bottom_sheet: ^3.0.0
+
+  # Toast / Snackbar Notifications
+  toastification: ^2.1.1
+
+  # Swipe to delete di list items
+  flutter_slidable: ^3.1.1
+
+  # Pull to refresh
+  pull_to_refresh: ^2.0.0
+
+  # Cupertino Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.3
+  custom_lint: ^0.7.5
+  riverpod_lint: ^2.6.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
